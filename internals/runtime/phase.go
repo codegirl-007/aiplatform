@@ -24,7 +24,7 @@ const (
 	PhaseOrderExecution   Phase = 4
 )
 
-const (
+var (
 	// MinPhase and MaxPhase define valid phase range.
 	MinPhase = PhaseDataIngestion
 	MaxPhase = PhaseOrderExecution
