@@ -9,17 +9,22 @@ import (
 
 // Phase represents a stage in the strategy pipeline.
 // The zero value is not a valid phase (invariant: zero values are invalid).
+//
+// Numeric mapping is frozen per ALGO.md Invariant 3:
+//
+//	data_ingestion=1, signal_generation=2, risk_validation=3, order_execution=4
 type Phase int
 
 const (
-	_ Phase = iota // Skip 0 - invalid/uninitialized
-	PhaseDataIngestion
-	PhaseSignalGeneration
-	PhaseRiskValidation
-	PhaseOrderExecution
+	// Phase constants with explicit numeric values per ALGO.md Invariant 3.
+	// These values MUST NOT change - they define the phase execution order.
+	PhaseDataIngestion    Phase = 1
+	PhaseSignalGeneration Phase = 2
+	PhaseRiskValidation   Phase = 3
+	PhaseOrderExecution   Phase = 4
 )
 
-var (
+const (
 	// MinPhase and MaxPhase define valid phase range.
 	MinPhase = PhaseDataIngestion
 	MaxPhase = PhaseOrderExecution

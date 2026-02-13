@@ -9,6 +9,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestPhase_NumericMapping_ALGO validates numeric mapping per ALGO.md Invariant 3.
+// This test MUST NOT be changed - it enforces the contract with ALGO.md.
+// If this test fails, the phase constants have been modified incorrectly.
+func TestPhase_NumericMapping_ALGO(t *testing.T) {
+	// ALGO.md Invariant 3 requires:
+	// data_ingestion=1, signal_generation=2, risk_validation=3, order_execution=4
+	assert.Equal(t, Phase(1), PhaseDataIngestion, "ALGO.md requires data_ingestion=1")
+	assert.Equal(t, Phase(2), PhaseSignalGeneration, "ALGO.md requires signal_generation=2")
+	assert.Equal(t, Phase(3), PhaseRiskValidation, "ALGO.md requires risk_validation=3")
+	assert.Equal(t, Phase(4), PhaseOrderExecution, "ALGO.md requires order_execution=4")
+
+	// Also verify int conversion works correctly
+	assert.Equal(t, 1, int(PhaseDataIngestion))
+	assert.Equal(t, 2, int(PhaseSignalGeneration))
+	assert.Equal(t, 3, int(PhaseRiskValidation))
+	assert.Equal(t, 4, int(PhaseOrderExecution))
+}
+
 // TestPhase_String validates String() returns correct strings for valid phases.
 func TestPhase_String(t *testing.T) {
 	tests := []struct {
