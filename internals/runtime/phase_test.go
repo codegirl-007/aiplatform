@@ -1,11 +1,31 @@
 package runtime
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// TestPhase_NumericMapping_ALGO validates numeric mapping per ALGO.md Invariant 3.
+// This test MUST NOT be changed - it enforces the contract with ALGO.md.
+// If this test fails, the phase constants have been modified incorrectly.
+func TestPhase_NumericMapping_ALGO(t *testing.T) {
+	// ALGO.md Invariant 3 requires:
+	// data_ingestion=1, signal_generation=2, risk_validation=3, order_execution=4
+	assert.Equal(t, Phase(1), PhaseDataIngestion, "ALGO.md requires data_ingestion=1")
+	assert.Equal(t, Phase(2), PhaseSignalGeneration, "ALGO.md requires signal_generation=2")
+	assert.Equal(t, Phase(3), PhaseRiskValidation, "ALGO.md requires risk_validation=3")
+	assert.Equal(t, Phase(4), PhaseOrderExecution, "ALGO.md requires order_execution=4")
+
+	// Also verify int conversion works correctly
+	assert.Equal(t, 1, int(PhaseDataIngestion))
+	assert.Equal(t, 2, int(PhaseSignalGeneration))
+	assert.Equal(t, 3, int(PhaseRiskValidation))
+	assert.Equal(t, 4, int(PhaseOrderExecution))
+}
 
 // TestPhase_String validates String() returns correct strings for valid phases.
 func TestPhase_String(t *testing.T) {
@@ -181,6 +201,127 @@ func TestPhase_RoundTrip(t *testing.T) {
 		t.Run(phase.String(), func(t *testing.T) {
 			str := phase.String()
 			parsed := ParsePhase(str)
+			assert.Equal(t, phase, parsed)
+		})
+	}
+}
+
+// TestPhase_MarshalJSON validates Phase serializes as a JSON string.
+func TestPhase_MarshalJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		phase    Phase
+		expected string
+	}{
+		{"data_ingestion", PhaseDataIngestion, `"data_ingestion"`},
+		{"signal_generation", PhaseSignalGeneration, `"signal_generation"`},
+		{"risk_validation", PhaseRiskValidation, `"risk_validation"`},
+		{"order_execution", PhaseOrderExecution, `"order_execution"`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := json.Marshal(tt.phase)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, string(data))
+		})
+	}
+}
+
+// TestPhase_MarshalJSON_Invalid validates marshaling invalid phase returns error.
+func TestPhase_MarshalJSON_Invalid(t *testing.T) {
+	invalid := Phase(99)
+	_, err := json.Marshal(invalid)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid phase")
+}
+
+// TestPhase_UnmarshalJSON validates Phase deserializes from JSON string.
+func TestPhase_UnmarshalJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected Phase
+	}{
+		{"data_ingestion", `"data_ingestion"`, PhaseDataIngestion},
+		{"signal_generation", `"signal_generation"`, PhaseSignalGeneration},
+		{"risk_validation", `"risk_validation"`, PhaseRiskValidation},
+		{"order_execution", `"order_execution"`, PhaseOrderExecution},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var p Phase
+			err := json.Unmarshal([]byte(tt.input), &p)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, p)
+		})
+	}
+}
+
+// TestPhase_UnmarshalJSON_Numeric validates backward compat with numeric phase.
+func TestPhase_UnmarshalJSON_Numeric(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected Phase
+	}{
+		{"1 = data_ingestion", `1`, PhaseDataIngestion},
+		{"2 = signal_generation", `2`, PhaseSignalGeneration},
+		{"3 = risk_validation", `3`, PhaseRiskValidation},
+		{"4 = order_execution", `4`, PhaseOrderExecution},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var p Phase
+			err := json.Unmarshal([]byte(tt.input), &p)
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, p)
+		})
+	}
+}
+
+// TestPhase_UnmarshalJSON_Invalid validates invalid inputs return errors.
+func TestPhase_UnmarshalJSON_Invalid(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+	}{
+		{"invalid string", `"invalid"`},
+		{"invalid number", `99`},
+		{"zero", `0`},
+		{"negative", `-1`},
+		{"empty string", `""`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var p Phase
+			err := json.Unmarshal([]byte(tt.input), &p)
+			assert.Error(t, err)
+		})
+	}
+}
+
+// TestPhase_JSON_RoundTrip validates marshal->unmarshal preserves phase.
+func TestPhase_JSON_RoundTrip(t *testing.T) {
+	phases := []Phase{
+		PhaseDataIngestion,
+		PhaseSignalGeneration,
+		PhaseRiskValidation,
+		PhaseOrderExecution,
+	}
+
+	for _, phase := range phases {
+		t.Run(phase.String(), func(t *testing.T) {
+			data, err := json.Marshal(phase)
+			require.NoError(t, err)
+
+			var parsed Phase
+			err = json.Unmarshal(data, &parsed)
+			require.NoError(t, err)
+
 			assert.Equal(t, phase, parsed)
 		})
 	}
