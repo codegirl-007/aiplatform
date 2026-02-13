@@ -54,7 +54,7 @@ func FormatStepStarted(seq int64, runID RunID, stepID string, phase Phase) StepS
 	assert.Gt(seq, int64(0), "seq must be positive")
 	assert.Is_true(runID != RunID(""), "runID must not be empty")
 	assert.Not_empty(stepID, "stepID must not be empty")
-	assert.Gt(int64(phase), 0, "phase must be positive")
+	assert.Is_true(phase.IsValid(), "phase must be valid")
 
 	return StepStartedEvent{
 		RunID:  runID,
@@ -70,7 +70,7 @@ func FormatStepFinished(seq int64, runID RunID, stepID string, phase Phase) Step
 	assert.Gt(seq, int64(0), "seq must be positive")
 	assert.Is_true(runID != RunID(""), "runID must not be empty")
 	assert.Not_empty(stepID, "stepID must not be empty")
-	assert.Gt(int64(phase), 0, "phase must be positive")
+	assert.Is_true(phase.IsValid(), "phase must be valid")
 
 	return StepFinishedEvent{
 		RunID:  runID,
@@ -86,7 +86,7 @@ func FormatStepFailed(seq int64, runID RunID, stepID string, phase Phase, reason
 	assert.Gt(seq, int64(0), "seq must be positive")
 	assert.Is_true(runID != RunID(""), "runID must not be empty")
 	assert.Not_empty(stepID, "stepID must not be empty")
-	assert.Gt(int64(phase), 0, "phase must be positive")
+	assert.Is_true(phase.IsValid(), "phase must be valid")
 	assert.Not_empty(reason, "reason must not be empty")
 
 	return StepFailedEvent{

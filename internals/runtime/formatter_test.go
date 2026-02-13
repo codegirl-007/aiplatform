@@ -50,7 +50,7 @@ func TestFormatter_RunFailed(t *testing.T) {
 func TestFormatter_StepStarted(t *testing.T) {
 	runID := RunID("test-run")
 	stepID := "step-1"
-	phase := Phase(1)
+	phase := PhaseDataIngestion
 	seq := int64(45)
 
 	event := FormatStepStarted(seq, runID, stepID, phase)
@@ -66,7 +66,7 @@ func TestFormatter_StepStarted(t *testing.T) {
 func TestFormatter_StepFinished(t *testing.T) {
 	runID := RunID("test-run")
 	stepID := "step-1"
-	phase := Phase(1)
+	phase := PhaseDataIngestion
 	seq := int64(46)
 
 	event := FormatStepFinished(seq, runID, stepID, phase)
@@ -82,7 +82,7 @@ func TestFormatter_StepFinished(t *testing.T) {
 func TestFormatter_StepFailed(t *testing.T) {
 	runID := RunID("test-run")
 	stepID := "step-1"
-	phase := Phase(1)
+	phase := PhaseDataIngestion
 	reason := "step error"
 	seq := int64(47)
 
