@@ -3,6 +3,7 @@ node_modules
 frontend/dist
 build
 .env
+.opencode/plans/
 
 # Compiled binaries
 etrade-test

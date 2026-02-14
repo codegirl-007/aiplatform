@@ -1,5 +1,27 @@
 # User Journey: LLM-Powered Algo Trading Platform
 
+## Glossary: Domain Concepts → Engine Model
+
+**Strategy Execution** (domain concept) maps to:
+- **Engine `run_id`** - Each strategy execution is a run with unique UUID
+- **Engine phases** - Execution progresses through phases: `data_ingestion` → `signal_generation` → `risk_validation` → `order_execution`
+- **Event log** - All strategy actions captured as immutable events (JSONL format)
+
+**Phase Progression:**
+- Phase 1: `data_ingestion` - Collect market data, bars, quotes
+- Phase 2: `signal_generation` - LLM analysis, signal creation
+- Phase 3: `risk_validation` - Position size, buying power, concentration checks
+- Phase 4: `order_execution` - Submit orders to broker, track fills
+
+**Engine Events Used:**
+- `run.started`, `run.finished`, `run.failed` - Run lifecycle
+- `step.started`, `step.finished`, `step.failed` - Step execution within phases
+- `llm.requested`, `llm.responded` - LLM calls
+- `tool.called`, `tool.returned`, `tool.failed` - Tool/broker API calls
+- Trading events: `bar.received`, `signal.generated`, `order.submitted`, `order.filled`, etc.
+
+For engine invariants, see `docs/ALGO.md`. For trading invariants, see `docs/TRADING.md`.
+
 ## **1. Initial Setup**
 
 **Connect Broker:**
@@ -54,21 +76,21 @@ Hard Limits: Same as Mode 1
 
 **Live Trading Flow:**
 
-1. **Market Data Arrives**
+1. **Market Data Arrives** (Phase 1: `data_ingestion`)
    - App receives 1-min bar: AAPL $175.50, volume 1.2M
    - Event: `bar.received`
 
-2. **LLM Analysis**
+2. **LLM Analysis** (Phase 2: `signal_generation`)
    - App sends prompt to GPT-4 with price data
+   - Events: `llm.requested` → `llm.responded`
    - LLM responds: "BUY AAPL - RSI oversold at 28"
-   - Event: `llm.responded`
 
 3. **Action Generated**
    - Action queued: Buy 100 shares AAPL @ market
    - Event: `llm.action_generated`
    - **UI Notification:** Desktop alert + sound
 
-4. **User Approval Screen (Wails UI)**
+4. **User Approval Screen (Wails UI)** (Phase 3: `risk_validation`)
    ```
    🔵 NEW TRADE PROPOSAL
    
@@ -89,8 +111,8 @@ Hard Limits: Same as Mode 1
    (Expires in 4:52)
    ```
 
-5. **User Decision:**
-   - **Approve:** Order submitted to ETrade → `order.filled` → Position opened
+5. **User Decision:** (Phase 4: `order_execution` if approved)
+   - **Approve:** Order submitted to ETrade → `order.submitted` → `order.filled` → Position opened
    - **Reject:** Action discarded, logged in history
    - **Timeout:** Treated as reject after 5 min
 
@@ -141,11 +163,11 @@ Hard Limits: Same as Mode 1
 ## **5. Safety Features (Both Modes)**
 
 **Hard Limits (Cannot Override):**
-- ❌ No orders > $100k (Invariant 65)
-- ❌ No penny stocks (< $1) (Invariant 66)
-- ❌ No trading outside 9:30 AM - 4:00 PM ET (Invariant 67)
-- ❌ No duplicate actions within 1 minute (Invariant 69)
-- ❌ 30-second cooldown between trades (Invariant 68)
+- ❌ No orders > $100k (Invariant T100)
+- ❌ No penny stocks (< $1) (Invariant T101)
+- ❌ No trading outside 9:30 AM - 4:00 PM ET (Invariant T102)
+- ❌ No duplicate actions within 1 minute (Invariant T104)
+- ❌ 30-second cooldown between trades (Invariant T103)
 
 **Risk Checks (Every Order):**
 - Position size ≤ limit
@@ -216,20 +238,29 @@ Hard Limits: Same as Mode 1
 ## **8. Event Log Benefits**
 
 **Full Audit Trail:**
-Every action recorded with sequence numbers:
+Every action recorded with sequence numbers (see `docs/ALGO.md` Invariant 38):
 ```json
-{"seq":1,"type":"strategy.started","strategy_id":"..."}
-{"seq":2,"type":"bar.received","symbol":"AAPL","close":175.50}
-{"seq":3,"type":"llm.requested","prompt":"..."}
-{"seq":4,"type":"llm.responded","action":"buy","symbol":"AAPL"}
-{"seq":5,"type":"llm.action_generated","action_id":"..."}
-{"seq":6,"type":"approval.approved"} // Mode 1 only
-{"seq":7,"type":"order.submitted","order_id":"..."}
-{"seq":8,"type":"order.filled","fill_price":175.50}
+{"seq":1,"type":"run.started","run_id":"run-xxx","workspace_root":"/data/strategies"}
+{"seq":2,"type":"step.started","step_id":"step-yyy","phase":"data_ingestion"}
+{"seq":3,"type":"bar.received","symbol":"AAPL","close":175.50}
+{"seq":4,"type":"step.finished","step_id":"step-yyy","phase":"data_ingestion"}
+{"seq":5,"type":"step.started","step_id":"step-zzz","phase":"signal_generation"}
+{"seq":6,"type":"llm.requested","prompt":"..."}
+{"seq":7,"type":"llm.responded","action":"buy","symbol":"AAPL"}
+{"seq":8,"type":"step.finished","step_id":"step-zzz","phase":"signal_generation"}
+{"seq":9,"type":"step.started","step_id":"step-aaa","phase":"risk_validation"}
+{"seq":10,"type":"llm.action_generated","action_id":"..."}
+{"seq":11,"type":"approval.approved"} // Mode 1 only
+{"seq":12,"type":"step.finished","step_id":"step-aaa","phase":"risk_validation"}
+{"seq":13,"type":"step.started","step_id":"step-bbb","phase":"order_execution"}
+{"seq":14,"type":"order.submitted","order_id":"..."}
+{"seq":15,"type":"order.filled","fill_price":175.50}
+{"seq":16,"type":"step.finished","step_id":"step-bbb","phase":"order_execution"}
+{"seq":17,"type":"run.finished","run_id":"run-xxx"}
 ```
 
 **Replay Capability:**
-- Can replay any strategy session
+- Can replay any strategy session (engine guarantee - `docs/ALGO.md` Invariant 41)
 - Debug what the LLM was thinking
 - Prove compliance with invariants
 - Backtest new strategies on historical data

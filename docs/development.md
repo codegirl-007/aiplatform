@@ -67,7 +67,7 @@ func (e *Engine) runLoop() {
 4. Debug when things break
 
 **Tiger Beetle Approach:**
-1. Define invariants (see INVARIANTS.md)
+1. Define invariants (see docs/ALGO.md)
 2. Design system so invariants are enforced
 3. Code is implementation of proofs
 4. Tests verify invariants hold
@@ -551,7 +551,8 @@ file, err := os.OpenFile(path,
 
 ### General Rules
 
-- Use `snake_case` for functions, variables, and files (Go uses CamelCase for exported, but we prefer clarity over convention in internal code)
+- Use `snake_case` for unexported/internal identifiers, file names, JSON fields, and event type strings
+- Exported identifiers remain Go-exported style (CamelCase) for public APIs
 - Do not abbreviate variable names (unless primitive integer used for sorting/calculation)
 - Use proper capitalization for acronyms (`VSRState`, not `VsrState`)
 - Add units or qualifiers to variable names, sorted by descending significance
@@ -710,7 +711,7 @@ Standardize on Go for:
 
 ## Style By The Numbers
 
-- Run `go fmt` (but we prefer 4-space indentation - adjust your editor)
+- Run `go fmt` - use standard Go formatting, don't fight it
 - Hard limit: 100 columns for line length
 - Hard limit: 70 lines per function
 - Hard limit: 2 assertions per function (minimum average)

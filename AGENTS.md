@@ -25,7 +25,8 @@ frontend/           Vite-powered web UI
 When working on this project, familiarize yourself with these files as needed:
 
 - **`docs/development.md`** - Engineering principles, code standards, testing strategy (Tiger Beetle-inspired)
-- **`docs/ALGO.md`** - Phase numeric mapping and algorithmic trading domain rules
+- **`docs/ALGO.md`** - Runtime engine invariants (runs, steps, phases, event log)
+- **`docs/TRADING.md`** - Trading-domain invariants (strategy, orders, positions, risk, approval, LLM)
 - **`docs/FLOW.md`** - User journey and trading workflow documentation
 
 **Precedence**: When rules conflict, `docs/ALGO.md` wins for "must" constraints; `docs/development.md` governs process and style.
@@ -43,7 +44,7 @@ Read `docs/development.md` for full details. Key principles:
 - Define what MUST always be true
 - Design so invariants are enforced or unrepresentable
 - Code is implementation of proofs
-- See `docs/ALGO.md` for all invariants
+- See `docs/ALGO.md` for engine invariants and `docs/TRADING.md` for trading invariants
 
 ### 3. Assertions Are Force Multipliers
 - **Minimum 2 assertions per function** (average)
@@ -80,12 +81,13 @@ Read `docs/development.md` for full details. Key principles:
 
 ## Go Style Guidelines
 
-- Use `snake_case` for internal code (clarity > convention)
+- Use `snake_case` for unexported/internal identifiers, file names, JSON fields, and event type strings
+- Exported identifiers remain Go-exported style (CamelCase) for public APIs
 - No abbreviations in variable names (except i, j for loops)
 - Units/qualifiers last: `latency_ms_max` not `max_latency_ms`
 - Comments are sentences: capitalize, punctuate, explain WHY
 - File order: constants → types → functions
-- Run `go fmt` (prefer 4-space indentation)
+- Run `go fmt` - use standard Go formatting, don't fight it
 
 ## Testing Strategy
 
@@ -128,11 +130,9 @@ Frontend uses Vite dev server on `http://localhost:34115` for Go method calls du
 
 ### Current Variables
 ```bash
-ETRADE_API_KEY=         # ETrade sandbox/production key
-ETRADE_API_SECRET=      # ETrade sandbox/production secret
+ETRADE_CONSUMER_KEY=         # ETrade sandbox/production consumer key
+ETRADE_CONSUMER_SECRET=      # ETrade sandbox/production consumer secret
 ```
-
-**Note**: The ETrade client (`internals/clients/etrade.go`) uses `ETRADE_API_KEY` and `ETRADE_API_SECRET` (NOT `CONSUMER_KEY/SECRET`). Always verify variable names match between code and `.env.example`.
 
 ## Git Workflow & PR Standards
 
