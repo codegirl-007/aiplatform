@@ -54,17 +54,16 @@ func NewETrade(consumer_key, consumer_secret, workspace_root string,
 	// Load OAuth token from storage.
 	access_token, access_secret, _, _, err := LoadETradeToken(
 		workspace_root, sandbox)
-	assert.No_err(err, "failed to load token")
 
-	// LoadETradeToken returns empty strings if no token file exists.
+	assert.No_err(err, "failed to load token")
 	assert.Not_empty(access_token,
 		"authentication required: no token found - run etrade-oauth-test to authenticate")
 	assert.Not_empty(access_secret,
 		"authentication required: no token secret found")
 
-	// Create OAuth-signed HTTP client.
 	config := NewOAuthConfig(consumer_key, consumer_secret, sandbox)
 	http_client := NewOAuthClient(config, access_token, access_secret)
+
 	assert.Not_nil(http_client, "http_client must not be nil")
 
 	return &etrade{
@@ -77,12 +76,14 @@ func NewETrade(consumer_key, consumer_secret, workspace_root string,
 }
 
 // GetOrders returns the orders for the given symbol.
+// TODO(COD-17): Implement via E*TRADE accounts/orders endpoint. https://linear.app/codegirl/issue/COD-17
 func (e *etrade) GetOrders(symbol string) ([]Order, error) {
 	assert.Not_empty(symbol, "symbol must not be empty")
 	return nil, nil
 }
 
 // GetTrades returns the trades for the given symbol.
+// TODO(COD-17): Implement via E*TRADE accounts/transactions endpoint. https://linear.app/codegirl/issue/COD-17
 func (e *etrade) GetTrades(symbol string) ([]Trade, error) {
 	assert.Not_empty(symbol, "symbol must not be empty")
 	return nil, nil
