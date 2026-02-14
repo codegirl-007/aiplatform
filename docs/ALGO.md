@@ -160,7 +160,7 @@ strategy.finished
 - `abs(quantity) ≤ max_position_size`.
 
 ### 17. Position P&L Calculation
-- **[EXEC]` Enforced after every fill.
+- **[EXEC]** Enforced after every fill.
 - `unrealized_pnl` = (current_price - avg_cost) × quantity
 - `realized_pnl` accumulates from closed trades
 - P&L calculations must use consistent precision (2 decimal places for USD)
