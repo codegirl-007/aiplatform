@@ -184,11 +184,13 @@ func scanLastSeq(file *os.File) (int64, error) {
 
 **Example - Phase enum:**
 ```go
+type Status int
+
 const (
-    _ Phase = iota // skip 0 - invalid/uninitialized
-    PhasePlanner
-    PhaseExecutor
-    PhaseReviewer
+    StatusInvalid Status = iota // 0 - invalid/uninitialized
+    StatusPending               // 1
+    StatusRunning               // 2
+    StatusCompleted             // 3
 )
 ```
 
