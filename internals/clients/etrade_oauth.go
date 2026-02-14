@@ -9,39 +9,53 @@ import (
 	"github.com/dghubble/oauth1"
 )
 
+const (
+	sandbox_request_token_url = "https://apisb.etrade.com/oauth/request_token"
+	sandbox_access_token_url  = "https://apisb.etrade.com/oauth/access_token"
+	sandbox_authorize_url     = "https://us.etrade.com/e/t/etws/authorize"
+
+	prod_request_token_url  = "https://api.etrade.com/oauth/request_token"
+	prod_access_token_url   = "https://api.etrade.com/oauth/access_token"
+	prod_authorize_url      = "https://us.etrade.com/e/t/etws/authorize"
+	sandbox_api_base_url    = "https://apisb.etrade.com"
+	prod_api_base_url       = "https://api.etrade.com"
+	sandbox_renew_token_url = "https://apisb.etrade.com/oauth/renew_access_token"
+	prod_renew_token_url    = "https://api.etrade.com/oauth/renew_access_token"
+)
+
 // oauth_endpoints returns the request token, access token, and authorize URLs
 // for the given sandbox flag.
 func oauth_endpoints(sandbox bool) (string, string, string) {
 	if sandbox {
-		return "https://apisb.etrade.com/oauth/request_token",
-			"https://apisb.etrade.com/oauth/access_token",
-			"https://us.etrade.com/e/t/etws/authorize"
+		return sandbox_request_token_url,
+			sandbox_access_token_url,
+			sandbox_authorize_url
 	}
-	return "https://api.etrade.com/oauth/request_token",
-		"https://api.etrade.com/oauth/access_token",
-		"https://us.etrade.com/e/t/etws/authorize"
+
+	return prod_request_token_url,
+		prod_access_token_url,
+		prod_authorize_url
 }
 
 // APIBaseURL returns the API base URL for the given sandbox flag.
-// Exported for use by cmd utilities and Wails backend.
 func APIBaseURL(sandbox bool) string {
 	if sandbox {
-		return "https://apisb.etrade.com"
+		return sandbox_api_base_url
 	}
-	return "https://api.etrade.com"
+	return prod_api_base_url
 }
+
+const ()
 
 // renew_token_url returns the renew access token URL for the given sandbox flag.
 func renew_token_url(sandbox bool) string {
 	if sandbox {
-		return "https://apisb.etrade.com/oauth/renew_access_token"
+		return sandbox_renew_token_url
 	}
-	return "https://api.etrade.com/oauth/renew_access_token"
+	return prod_renew_token_url
 }
 
 // NewOAuthConfig creates an OAuth 1.0a config for ETrade.
-// ETrade requires oauth_callback to be set to "oob" for out-of-band verification.
-// Exported for use by cmd utilities and Wails backend.
 func NewOAuthConfig(consumer_key, consumer_secret string,
 	sandbox bool) *oauth1.Config {
 	assert.Not_empty(consumer_key, "consumer_key must not be empty")
@@ -62,8 +76,6 @@ func NewOAuthConfig(consumer_key, consumer_secret string,
 }
 
 // RequestToken fetches a request token from ETrade.
-// Returns the request token and request secret, or an error.
-// Exported for use by cmd utilities and Wails backend.
 func RequestToken(config *oauth1.Config) (string, string, error) {
 	assert.Not_nil(config, "config must not be nil")
 
@@ -80,16 +92,10 @@ func RequestToken(config *oauth1.Config) (string, string, error) {
 
 // AuthorizationURL builds the ETrade authorization URL that the user
 // must visit to approve the application and receive a verification code.
-// ETrade uses non-standard OAuth parameters: key=<consumer_key>&token=<request_token>
-// instead of the standard oauth_token parameter.
-// Exported for use by cmd utilities and Wails backend.
-func AuthorizationURL(config *oauth1.Config,
-	request_token string) string {
+func AuthorizationURL(config *oauth1.Config, request_token string) string {
 	assert.Not_nil(config, "config must not be nil")
 	assert.Not_empty(request_token, "request_token must not be empty")
 
-	// ETrade requires: ?key=<consumer_key>&token=<request_token>
-	// This is non-standard OAuth 1.0a; most providers use ?oauth_token=<token>
 	auth_url := fmt.Sprintf("%s?key=%s&token=%s",
 		config.Endpoint.AuthorizeURL,
 		url.QueryEscape(config.ConsumerKey),
@@ -101,22 +107,14 @@ func AuthorizationURL(config *oauth1.Config,
 }
 
 // ExchangeToken exchanges the request token and verifier for an access token.
-// Returns the access token and access secret, or an error.
-// Exported for use by cmd utilities and Wails backend.
-func ExchangeToken(config *oauth1.Config, request_token,
-	request_secret, verifier string) (string, string, error) {
+func ExchangeToken(config *oauth1.Config, request_token, request_secret, verifier string) (string, string, error) {
 	assert.Not_nil(config, "config must not be nil")
 	assert.Not_empty(request_token, "request_token must not be empty")
 	assert.Not_empty(request_secret, "request_secret must not be empty")
 	assert.Not_empty(verifier, "verifier must not be empty")
 
-	access_token, access_secret, err := config.AccessToken(
-		request_token, request_secret, verifier)
-	if err != nil {
-		return "", "", fmt.Errorf("failed to exchange for access token: %w",
-			err)
-	}
-
+	access_token, access_secret, err := config.AccessToken(request_token, request_secret, verifier)
+	assert.No_err(err, "failed to exchange for access token")
 	assert.Not_empty(access_token, "access_token must not be empty")
 	assert.Not_empty(access_secret, "access_secret must not be empty")
 

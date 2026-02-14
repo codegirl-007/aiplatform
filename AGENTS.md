@@ -53,6 +53,7 @@ Read `docs/development.md` for full details. Key principles:
 - Assert preconditions, postconditions, and invariants
 - Pair assertions: validate at write time AND read time
 - Use `pkg/assert` package (panics on violation)
+- When a state is impossible and application cannot proceed, code should not return an error. We should assert and panic.
 
 ### 4. Event Sourcing Architecture
 - Events are the source of truth, state is a cache
