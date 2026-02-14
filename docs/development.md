@@ -36,24 +36,13 @@ The E*TRADE API uses OAuth 1.0a with an **out-of-band (OOB)** verification flow:
 
 ### Testing OAuth Flow
 
-Run the OAuth test utility:
+Run the OAuth test utility to authenticate:
 
 ```bash
 go run ./cmd/etrade-oauth-test
 ```
 
-**First run** (no saved token):
-1. Script prints E*TRADE authorization URL
-2. Open URL in browser, log in to E*TRADE sandbox account
-3. Copy the 5-character verification code shown
-4. Paste verification code into terminal
-5. Script exchanges code for access token and saves to disk
-6. Script makes test API call to `GET /v1/accounts/list` to verify authentication
-
-**Subsequent runs** (token exists and valid):
-- Script loads saved token from disk
-- Script makes test API call immediately
-- No re-authentication required (until token expires)
+The tool will guide you through the OAuth flow. See `docs/etrade_manual_oauth_test.md` for detailed testing procedures.
 
 ### Token Expiration
 
