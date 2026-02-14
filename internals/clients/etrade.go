@@ -46,13 +46,13 @@ func NewETrade(apiKey, apiSecret string) ETrade {
 	if apiKey == "" {
 		err := godotenv.Load()
 		if err == nil {
-			apiKey = os.Getenv("ETRADE_API_KEY")
+			apiKey = os.Getenv("ETRADE_CONSUMER_KEY")
 		}
 	}
 	if apiSecret == "" {
 		err := godotenv.Load()
 		if err == nil {
-			apiSecret = os.Getenv("ETRADE_API_SECRET")
+			apiSecret = os.Getenv("ETRADE_CONSUMER_SECRET")
 		}
 	}
 	assert.Not_empty(apiKey, "apiKey must not be empty")
