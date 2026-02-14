@@ -1,0 +1,25 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "github-copilot/gpt-5.2-codex",
+  "mcp": {
+    "linear": {
+      "type": "remote",
+      "url": "https://mcp.linear.app/mcp",
+      "enabled": true
+    }
+  },
+  "agent": {
+    "build": {
+      "model": "github-copilot/claude-sonnet-4.5"
+    },
+    "plan": {
+      "mode": "primary",
+      "model": "github-copilot/gpt-5.2",
+      "tools": {
+        "write": false,
+        "edit": false,
+        "bash": false
+      }
+    }
+  }
+}
