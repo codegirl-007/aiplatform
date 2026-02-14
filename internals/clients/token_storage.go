@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"aiplatform/pkg/assert"
+	"github.com/dghubble/oauth1"
 )
 
 // etrade_oauth_token represents the OAuth credentials for ETrade API.
@@ -128,4 +129,74 @@ func load_etrade_token(workspaceRoot string) *etrade_oauth_token {
 	assert.Is_true(!token.ExpiresAt.IsZero(), "expires_at must be set")
 
 	return &token
+}
+
+// SaveETradeToken persists an OAuth token to workspace storage.
+// Exported wrapper for use by cmd utilities and Wails backend.
+// Tokens are stored at {workspace}/.aiplatform/credentials/etrade_tokens.json.
+// Panics if save fails (credentials must persist).
+func SaveETradeToken(workspace_root string, access_token,
+	access_secret string, sandbox bool, expires_at time.Time) {
+	assert.Is_true(filepath.IsAbs(workspace_root),
+		"workspace_root must be absolute path")
+	assert.Not_empty(access_token, "access_token must not be empty")
+	assert.Not_empty(access_secret, "access_secret must not be empty")
+	assert.Is_true(!expires_at.IsZero(), "expires_at must be set")
+
+	token := &etrade_oauth_token{
+		AccessToken:       access_token,
+		AccessTokenSecret: access_secret,
+		CreatedAt:         time.Now(),
+		ExpiresAt:         expires_at,
+		Sandbox:           sandbox,
+	}
+
+	save_etrade_token(workspace_root, token)
+}
+
+// LoadETradeToken loads a persisted OAuth token from workspace storage.
+// Returns (token, secret, sandbox, expires_at, nil) on success.
+// Returns ("", "", false, zero, nil) if no token exists (first-time use).
+// Returns error if token exists but sandbox mismatch or expired.
+// Panics if token file is corrupt or unreadable.
+func LoadETradeToken(workspace_root string,
+	sandbox bool) (string, string, bool, time.Time, error) {
+	assert.Is_true(filepath.IsAbs(workspace_root),
+		"workspace_root must be absolute path")
+
+	token := load_etrade_token(workspace_root)
+	if token == nil {
+		return "", "", false, time.Time{}, nil
+	}
+
+	// Verify sandbox/production mismatch.
+	if token.Sandbox != sandbox {
+		env := "production"
+		if sandbox {
+			env = "sandbox"
+		}
+		stored_env := "production"
+		if token.Sandbox {
+			stored_env = "sandbox"
+		}
+		return "", "", false, time.Time{},
+			fmt.Errorf("token environment mismatch: stored=%s, requested=%s",
+				stored_env, env)
+	}
+
+	// Check expiration.
+	if token.is_expired() {
+		return "", "", false, time.Time{},
+			fmt.Errorf("token expired at %s", token.ExpiresAt.Format(time.RFC3339))
+	}
+
+	return token.AccessToken, token.AccessTokenSecret, token.Sandbox,
+		token.ExpiresAt, nil
+}
+
+// CreateOAuthToken converts access token/secret into an oauth1.Token.
+func CreateOAuthToken(access_token, access_secret string) *oauth1.Token {
+	assert.Not_empty(access_token, "access_token must not be empty")
+	assert.Not_empty(access_secret, "access_secret must not be empty")
+	return oauth1.NewToken(access_token, access_secret)
 }

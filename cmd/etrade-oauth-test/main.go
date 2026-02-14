@@ -1,139 +1,200 @@
 package main
 
 import (
+	"aiplatform/internals/clients"
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/jerryryle/etrade-cli/pkg/etradelib/client"
 	"github.com/joho/godotenv"
-	"golang.org/x/exp/slog"
 )
 
 func main() {
-	fmt.Println("ETrade OAuth Test using etradelib")
-	fmt.Println("==================================")
+	fmt.Println("ETrade OAuth Demo (OOB Flow)")
+	fmt.Println("=============================")
 	fmt.Println()
 
-	if err := godotenv.Load(); err != nil {
-		fmt.Println("Note: .env not found, relying on environment variables")
-	}
+	// Load .env (best-effort; not required if env vars already set).
+	_ = godotenv.Load()
 
-	consumerKey, err := requireEnv("ETRADE_CONSUMER_KEY")
-	if err != nil {
-		fmt.Printf("✗ %v\n", err)
+	// Get consumer key/secret from environment.
+	consumer_key := strings.TrimSpace(os.Getenv("ETRADE_CONSUMER_KEY"))
+	consumer_secret := strings.TrimSpace(os.Getenv("ETRADE_CONSUMER_SECRET"))
+
+	if consumer_key == "" || consumer_secret == "" {
+		fmt.Println("Error: ETRADE_CONSUMER_KEY and ETRADE_CONSUMER_SECRET must be set")
+		fmt.Println()
+		fmt.Println("Set these in your .env file or environment:")
+		fmt.Println("  ETRADE_CONSUMER_KEY=your_key")
+		fmt.Println("  ETRADE_CONSUMER_SECRET=your_secret")
+		fmt.Println("  ETRADE_SANDBOX=true   # optional, defaults to true")
 		os.Exit(1)
 	}
 
-	consumerSecret, err := requireEnv("ETRADE_CONSUMER_SECRET")
-	if err != nil {
-		fmt.Printf("✗ %v\n", err)
-		os.Exit(1)
-	}
-
-	// Create a logger (discard output for simplicity)
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
-
-	// Create ETrade client for sandbox (production=false)
-	fmt.Println("Step 1: Creating ETrade client...")
-	etradeClient, err := client.CreateETradeClient(logger, false, consumerKey, consumerSecret, "", "")
-	if err != nil {
-		fmt.Printf("✗ Failed to create client: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("✓ Client created")
-	fmt.Println()
-
-	// Start authentication
-	fmt.Println("Step 2: Starting authentication...")
-	authResponse, err := etradeClient.Authenticate()
-	if err != nil {
-		fmt.Printf("✗ Failed to authenticate: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("✓ Got authorization URL")
-	fmt.Println()
-
-	// Parse the authorization URL from response
-	var authData map[string]interface{}
-	if err := json.Unmarshal(authResponse, &authData); err != nil {
-		fmt.Printf("✗ Failed to parse auth response: %v\n", err)
-		os.Exit(1)
-	}
-
-	authURL, ok := authData["authorizationUrl"].(string)
-	if !ok {
-		fmt.Println("✗ No authorization URL in response")
-		fmt.Printf("Response: %s\n", string(authResponse))
-		os.Exit(1)
-	}
-
-	// Show URL to user
-	fmt.Println("Step 3: Open this URL in your browser:")
-	fmt.Println(authURL)
-	fmt.Println()
-	fmt.Println("Instructions:")
-	fmt.Println("1. Log in with your ETrade sandbox credentials")
-	fmt.Println("2. Click 'Accept' to authorize this app")
-	fmt.Println("3. Copy the verification code shown")
-	fmt.Println()
-
-	// Get verification code from user
-	fmt.Print("Enter the verification code: ")
-	reader := bufio.NewReader(os.Stdin)
-	verifyCode, err := reader.ReadString('\n')
-	if err != nil {
-		fmt.Printf("✗ Failed to read verification code: %v\n", err)
-		os.Exit(1)
-	}
-	verifyCode = strings.TrimSpace(verifyCode)
-	if verifyCode == "" {
-		fmt.Println("✗ Verification code cannot be empty")
-		os.Exit(1)
-	}
-	fmt.Println()
-
-	// Complete authentication
-	fmt.Println("Step 4: Completing authentication...")
-	verifyResponse, err := etradeClient.Verify(verifyCode)
-	if err != nil {
-		fmt.Printf("✗ Failed to verify: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("✓ Authentication complete")
-	fmt.Printf("Response: %s\n", string(verifyResponse))
-	fmt.Println()
-
-	// Test API call - list accounts
-	fmt.Println("Step 5: Testing API call - listing accounts...")
-	accountsResponse, err := etradeClient.ListAccounts()
-	if err != nil {
-		fmt.Printf("✗ Failed to list accounts: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("✓ API call successful!")
-	fmt.Println()
-
-	// Parse and display accounts
-	var accountsData map[string]interface{}
-	if err := json.Unmarshal(accountsResponse, &accountsData); err != nil {
-		fmt.Printf("Response (raw): %s\n", string(accountsResponse))
+	// Determine sandbox vs production from env (default: sandbox).
+	sandbox := clients.ParseSandboxEnv()
+	if sandbox {
+		fmt.Println("Environment: sandbox")
 	} else {
-		fmt.Println("Accounts response:")
-		prettyJSON, _ := json.MarshalIndent(accountsData, "", "  ")
-		fmt.Println(string(prettyJSON))
+		fmt.Println("Environment: production")
 	}
 	fmt.Println()
-	fmt.Println("==================================")
-	fmt.Println("ETrade OAuth test completed successfully!")
+
+	// Determine workspace root (absolute path to repo root).
+	workspace_root, err := os.Getwd()
+	if err != nil {
+		fmt.Printf("Error: failed to get current directory: %v\n", err)
+		os.Exit(1)
+	}
+	workspace_root, err = filepath.Abs(workspace_root)
+	if err != nil {
+		fmt.Printf("Error: failed to resolve absolute path: %v\n", err)
+		os.Exit(1)
+	}
+	workspace_root, err = filepath.EvalSymlinks(workspace_root)
+	if err != nil {
+		fmt.Printf("Error: failed to resolve symlinks: %v\n", err)
+		os.Exit(1)
+	}
+
+	token_path := filepath.Join(workspace_root, ".aiplatform",
+		"credentials", "etrade_tokens.json")
+	fmt.Printf("Workspace: %s\n", workspace_root)
+	fmt.Printf("Token storage: %s\n", token_path)
+	fmt.Println()
+
+	// Check if we have a saved token.
+	access_token, access_secret, _, expires_at, err :=
+		clients.LoadETradeToken(workspace_root, sandbox)
+
+	if err != nil || access_token == "" {
+		// No token or expired/invalid; run OOB flow.
+		if err != nil {
+			fmt.Printf("Token load issue: %v\n", err)
+		} else {
+			fmt.Println("No saved token found")
+		}
+		fmt.Println("Starting OAuth authentication flow...")
+		fmt.Println()
+
+		access_token, access_secret, err = run_oauth_flow(
+			consumer_key, consumer_secret, sandbox)
+		if err != nil {
+			fmt.Printf("Error: OAuth flow failed: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Save token (ETrade tokens expire at midnight US Eastern).
+		expires_at = calculate_token_expiry()
+		clients.SaveETradeToken(workspace_root, access_token,
+			access_secret, sandbox, expires_at)
+
+		fmt.Println("Token saved successfully")
+		fmt.Printf("Token expires at: %s\n",
+			expires_at.Format("2006-01-02 15:04:05 MST"))
+		fmt.Println()
+	} else {
+		fmt.Println("Using saved token")
+		fmt.Printf("Token expires at: %s\n",
+			expires_at.Format("2006-01-02 15:04:05 MST"))
+		fmt.Println()
+	}
+
+	// Test API call: list accounts.
+	fmt.Println("Testing API call: GET /v1/accounts/list")
+	fmt.Println()
+
+	config := clients.NewOAuthConfig(consumer_key, consumer_secret, sandbox)
+	http_client := clients.NewOAuthClient(config, access_token, access_secret)
+
+	base_url := clients.APIBaseURL(sandbox)
+	accounts_url := fmt.Sprintf("%s/v1/accounts/list", base_url)
+
+	resp, err := http_client.Get(accounts_url)
+	if err != nil {
+		fmt.Printf("Error: API call failed: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	fmt.Printf("Response status: %d %s\n", resp.StatusCode, resp.Status)
+	fmt.Println()
+
+	if resp.StatusCode != 200 {
+		body := make([]byte, 1024)
+		n, _ := resp.Body.Read(body)
+		fmt.Printf("Response body: %s\n", string(body[:n]))
+		os.Exit(1)
+	}
+
+	// Read and print response body (likely XML).
+	body := make([]byte, 4096)
+	n, _ := resp.Body.Read(body)
+	fmt.Println("Response body:")
+	fmt.Println(string(body[:n]))
+	fmt.Println()
+
+	fmt.Println("=============================")
+	fmt.Println("ETrade OAuth demo completed successfully!")
 }
 
-func requireEnv(key string) (string, error) {
-	value := strings.TrimSpace(os.Getenv(key))
-	if value == "" {
-		return "", fmt.Errorf("missing required environment variable: %s", key)
+// run_oauth_flow executes the OOB OAuth flow.
+// Returns (access_token, access_secret, error).
+func run_oauth_flow(consumer_key, consumer_secret string,
+	sandbox bool) (string, string, error) {
+
+	config := clients.NewOAuthConfig(consumer_key, consumer_secret, sandbox)
+
+	// Step 1: Get request token.
+	fmt.Println("Step 1: Requesting OAuth token from ETrade...")
+	request_token, request_secret, err := clients.RequestToken(config)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get request token: %w", err)
 	}
-	return value, nil
+	fmt.Println("✓ Request token obtained")
+	fmt.Println()
+
+	// Step 2: Build authorization URL and show to user.
+	auth_url := clients.AuthorizationURL(config, request_token)
+	fmt.Println("Step 2: Authorize this application")
+	fmt.Println()
+	fmt.Println(clients.OAuthHelperMessage())
+	fmt.Println("Authorization URL:")
+	fmt.Println(auth_url)
+	fmt.Println()
+
+	// Step 3: Read verifier from user (OOB).
+	fmt.Print("Enter the verification code: ")
+	reader := bufio.NewReader(os.Stdin)
+	verifier, err := reader.ReadString('\n')
+	if err != nil {
+		return "", "", fmt.Errorf("failed to read verifier: %w", err)
+	}
+	verifier = strings.TrimSpace(verifier)
+	if verifier == "" {
+		return "", "", fmt.Errorf("verifier cannot be empty")
+	}
+	fmt.Println()
+
+	// Step 4: Exchange verifier for access token.
+	fmt.Println("Step 3: Exchanging verifier for access token...")
+	access_token, access_secret, err := clients.ExchangeToken(config,
+		request_token, request_secret, verifier)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to exchange token: %w", err)
+	}
+	fmt.Println("✓ Access token obtained")
+	fmt.Println()
+
+	return access_token, access_secret, nil
+}
+
+// calculate_token_expiry returns the token expiry time.
+// ETrade tokens expire at midnight US Eastern time.
+// For simplicity, we set expiry to 23 hours from now (conservative).
+func calculate_token_expiry() time.Time {
+	return time.Now().Add(23 * time.Hour)
 }

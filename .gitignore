@@ -4,6 +4,7 @@ frontend/dist
 build
 .env
 .opencode/plans/
+.aiplatform
 
 # Compiled binaries
 etrade-test
