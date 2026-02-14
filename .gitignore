@@ -3,3 +3,9 @@ node_modules
 frontend/dist
 build
 .env
+
+# Compiled binaries
+etrade-test
+*/etrade-test
+etrade-oauth-test
+*/etrade-oauth-test
