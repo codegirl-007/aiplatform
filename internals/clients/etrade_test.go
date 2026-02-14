@@ -9,25 +9,21 @@ func TestNewETrade(t *testing.T) {
 	workspace := t.TempDir()
 
 	expectPanic(t, "empty keys", func() {
-		_, _ = NewETrade("", "", workspace, true)
+		NewETrade("", "", workspace, true)
 	})
 
-	// NewETrade now requires a valid token, so we expect an error
+	// NewETrade now requires a valid token, so we expect a panic
 	// if no token is available.
-	_, err := NewETrade("key", "secret", workspace, true)
-	if err == nil {
-		t.Fatal("expected error when no token available, got nil")
-	}
+	expectPanic(t, "no token available", func() {
+		NewETrade("key", "secret", workspace, true)
+	})
 
 	// Save a valid token and try again.
 	expires_at := time.Now().Add(24 * time.Hour)
 	SaveETradeToken(workspace, "test_access_token",
 		"test_access_secret", true, expires_at)
 
-	client, err := NewETrade("key", "secret", workspace, true)
-	if err != nil {
-		t.Fatalf("unexpected error with valid token: %v", err)
-	}
+	client := NewETrade("key", "secret", workspace, true)
 	if client == nil {
 		t.Fatalf("expected client, got nil")
 	}
@@ -41,10 +37,7 @@ func TestGetOrders(t *testing.T) {
 	SaveETradeToken(workspace, "test_access_token",
 		"test_access_secret", true, expires_at)
 
-	client, err := NewETrade("key", "secret", workspace, true)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	client := NewETrade("key", "secret", workspace, true)
 
 	expectPanic(t, "empty symbol", func() {
 		_, _ = client.GetOrders("")
@@ -63,10 +56,7 @@ func TestGetTrades(t *testing.T) {
 	SaveETradeToken(workspace, "test_access_token",
 		"test_access_secret", true, expires_at)
 
-	client, err := NewETrade("key", "secret", workspace, true)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	client := NewETrade("key", "secret", workspace, true)
 
 	expectPanic(t, "empty symbol", func() {
 		_, _ = client.GetTrades("")

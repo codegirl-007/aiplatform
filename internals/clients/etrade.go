@@ -44,34 +44,27 @@ type etrade struct {
 
 // NewETrade creates a new etrade API client.
 // Loads OAuth token from storage and creates authenticated HTTP client.
-// Returns error if token is missing, expired, or invalid.
+// Panics if token is missing, expired, or invalid (fail-fast).
 func NewETrade(consumer_key, consumer_secret, workspace_root string,
-	sandbox bool) (ETrade, error) {
-	assert.Is_true(workspace_root != "",
-		"workspace_root must not be empty")
+	sandbox bool) ETrade {
+	assert.Not_empty(workspace_root, "workspace_root must not be empty")
 	assert.Not_empty(consumer_key, "consumer_key must not be empty")
 	assert.Not_empty(consumer_secret, "consumer_secret must not be empty")
 
 	// Load OAuth token from storage.
 	access_token, access_secret, _, _, err := LoadETradeToken(
 		workspace_root, sandbox)
-	if err != nil {
-		return nil, fmt.Errorf("authentication required: %w", err)
-	}
+	assert.No_err(err, "failed to load token")
 
 	// LoadETradeToken returns empty strings if no token file exists.
-	if access_token == "" || access_secret == "" {
-		return nil, fmt.Errorf("authentication required: no token found")
-	}
-
-	// Defensive assertions - should never fail after error checks above.
-	assert.Not_empty(access_token, "access_token must not be empty after load")
-	assert.Not_empty(access_secret, "access_secret must not be empty after load")
+	assert.Not_empty(access_token,
+		"authentication required: no token found - run etrade-oauth-test to authenticate")
+	assert.Not_empty(access_secret,
+		"authentication required: no token secret found")
 
 	// Create OAuth-signed HTTP client.
 	config := NewOAuthConfig(consumer_key, consumer_secret, sandbox)
 	http_client := NewOAuthClient(config, access_token, access_secret)
-
 	assert.Not_nil(http_client, "http_client must not be nil")
 
 	return &etrade{
@@ -80,7 +73,7 @@ func NewETrade(consumer_key, consumer_secret, workspace_root string,
 		workspace_root:  workspace_root,
 		sandbox:         sandbox,
 		http_client:     http_client,
-	}, nil
+	}
 }
 
 // GetOrders returns the orders for the given symbol.
