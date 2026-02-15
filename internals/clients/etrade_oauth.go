@@ -135,7 +135,10 @@ func ExchangeToken(config *oauth1.Config,
 	assert.Not_empty(verifier, "verifier must not be empty")
 
 	access_token, access_secret, err := config.AccessToken(request_token, request_secret, verifier)
-	assert.No_err(err, "failed to exchange for access token")
+	if err != nil {
+		return "", "", fmt.Errorf("failed to exchange for access token: %w", err)
+	}
+
 	assert.Not_empty(access_token, "access_token must not be empty")
 	assert.Not_empty(access_secret, "access_secret must not be empty")
 
