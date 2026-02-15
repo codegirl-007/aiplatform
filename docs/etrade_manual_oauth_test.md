@@ -120,7 +120,7 @@ OAuth flow completed successfully!
 ```json
 {
   "access_token": "...",
-  "access_secret": "...",
+  "access_token_secret": "...",
   "expires_at": "2024-01-01T00:00:00Z",
   "sandbox": true
 }
