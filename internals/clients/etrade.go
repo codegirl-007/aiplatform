@@ -11,8 +11,7 @@ import (
 
 // ETrade is the interface for the etrade API.
 type ETrade interface {
-	GetOrders(symbol string) ([]Order, error)
-	GetTrades(symbol string) ([]Trade, error)
+	// Future methods: GetOrders, GetTrades (COD-17)
 }
 
 // Order is a single order from etrade.
@@ -73,20 +72,6 @@ func NewETrade(consumer_key, consumer_secret, workspace_root string,
 		sandbox:         sandbox,
 		http_client:     http_client,
 	}
-}
-
-// GetOrders returns the orders for the given symbol.
-// TODO(COD-17): Implement via E*TRADE accounts/orders endpoint. https://linear.app/codegirl/issue/COD-17
-func (e *etrade) GetOrders(symbol string) ([]Order, error) {
-	assert.Not_empty(symbol, "symbol must not be empty")
-	return nil, nil
-}
-
-// GetTrades returns the trades for the given symbol.
-// TODO(COD-17): Implement via E*TRADE accounts/transactions endpoint. https://linear.app/codegirl/issue/COD-17
-func (e *etrade) GetTrades(symbol string) ([]Trade, error) {
-	assert.Not_empty(symbol, "symbol must not be empty")
-	return nil, nil
 }
 
 // get makes an OAuth-signed GET request to the ETrade API.
