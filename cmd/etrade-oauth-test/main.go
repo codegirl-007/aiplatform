@@ -4,6 +4,7 @@ import (
 	"aiplatform/internals/clients"
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -124,17 +125,23 @@ func main() {
 	fmt.Println()
 
 	if resp.StatusCode != 200 {
-		body := make([]byte, 1024)
-		n, _ := resp.Body.Read(body)
-		fmt.Printf("Response body: %s\n", string(body[:n]))
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("Error reading response: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Response body: %s\n", string(body))
 		os.Exit(1)
 	}
 
 	// Read and print response body (likely XML).
-	body := make([]byte, 4096)
-	n, _ := resp.Body.Read(body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("Error reading response: %v\n", err)
+		os.Exit(1)
+	}
 	fmt.Println("Response body:")
-	fmt.Println(string(body[:n]))
+	fmt.Println(string(body))
 	fmt.Println()
 
 	fmt.Println("=============================")
