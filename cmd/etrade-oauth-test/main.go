@@ -18,6 +18,20 @@ func main() {
 	fmt.Println("=============================")
 	fmt.Println()
 
+	consumer_key, consumer_secret, sandbox := load_config()
+	workspace_root := resolve_workspace()
+	access_token, access_secret := load_or_authenticate(
+		workspace_root, consumer_key, consumer_secret, sandbox)
+	test_api_call(consumer_key, consumer_secret, sandbox,
+		access_token, access_secret)
+
+	fmt.Println("=============================")
+	fmt.Println("ETrade OAuth demo completed successfully!")
+}
+
+// load_config loads and validates environment variables.
+// Returns (consumer_key, consumer_secret, sandbox).
+func load_config() (string, string, bool) {
 	// Load .env (best-effort; not required if env vars already set).
 	_ = godotenv.Load()
 
@@ -44,7 +58,12 @@ func main() {
 	}
 	fmt.Println()
 
-	// Determine workspace root (absolute path to repo root).
+	return consumer_key, consumer_secret, sandbox
+}
+
+// resolve_workspace determines workspace root (absolute path to repo root).
+// Prints workspace and token storage paths. Returns workspace root.
+func resolve_workspace() string {
 	workspace_root, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("Error: failed to get current directory: %v\n", err)
@@ -66,6 +85,14 @@ func main() {
 	fmt.Printf("Workspace: %s\n", workspace_root)
 	fmt.Printf("Token storage: %s\n", token_path)
 	fmt.Println()
+
+	return workspace_root
+}
+
+// load_or_authenticate loads existing token or runs OAuth flow.
+// Returns (access_token, access_secret).
+func load_or_authenticate(workspace_root, consumer_key,
+	consumer_secret string, sandbox bool) (string, string) {
 
 	// Check if we have a saved token.
 	access_token, access_secret, _, expires_at, err :=
@@ -104,7 +131,13 @@ func main() {
 		fmt.Println()
 	}
 
-	// Test API call: list accounts.
+	return access_token, access_secret
+}
+
+// test_api_call tests the API with a GET /v1/accounts/list call.
+func test_api_call(consumer_key, consumer_secret string, sandbox bool,
+	access_token, access_secret string) {
+
 	fmt.Println("Testing API call: GET /v1/accounts/list")
 	fmt.Println()
 
@@ -143,9 +176,6 @@ func main() {
 	fmt.Println("Response body:")
 	fmt.Println(string(body))
 	fmt.Println()
-
-	fmt.Println("=============================")
-	fmt.Println("ETrade OAuth demo completed successfully!")
 }
 
 // run_oauth_flow executes the OOB OAuth flow.
