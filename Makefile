@@ -8,7 +8,7 @@ help:
 	@printf "  build       Build Wails production app\n"
 	@printf "  clean       Remove build artifacts\n"
 	@printf "  test        Run Go tests\n"
-	@printf "  coverage    Generate test coverage report\n"
+	@printf "  coverage    Run tests and show coverage in terminal\n"
 	@printf "  lint        Run go vet and custom tigerlint\n"
 	@printf "  fmt         Run gofmt on Go files\n"
 	@printf "  vet         Run go vet\n"
@@ -21,19 +21,18 @@ build:
 	wails build
 
 clean:
-	rm -rf build coverage.out coverage.html
+	rm -rf build
 
 test:
 	go test ./...
 
 coverage:
-	go test ./... -coverpkg=./... -coverprofile=coverage.out -covermode=atomic
-	@printf "\n=== Coverage Summary ===\n"
-	@go tool cover -func=coverage.out | tail -1
-	@printf "\n=== Detailed Coverage ===\n"
-	@go tool cover -func=coverage.out
-	go tool cover -html=coverage.out -o coverage.html
-	@printf "\nWrote coverage.out and coverage.html\n"
+	go test ./... -coverpkg=./... -coverprofile=/tmp/coverage.out -covermode=atomic && \
+	printf "\n=== Coverage Summary ===\n" && \
+	go tool cover -func=/tmp/coverage.out | tail -1 && \
+	printf "\n=== Detailed Coverage ===\n" && \
+	go tool cover -func=/tmp/coverage.out && \
+	rm -f /tmp/coverage.out
 
 lint: vet tigerlint
 
