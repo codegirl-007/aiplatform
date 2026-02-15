@@ -2,8 +2,6 @@ package clients
 
 import (
 	"testing"
-
-	"github.com/dghubble/oauth1"
 )
 
 // TestOAuthEndpoints_Sandbox verifies sandbox endpoint URLs.
@@ -287,10 +285,6 @@ func TestParseSandboxEnv(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Save current env value.
-			old := oauth1.NoContext
-			defer func() { _ = old }()
-
 			t.Setenv("ETRADE_SANDBOX", tt.value)
 			got := ParseSandboxEnv()
 			if got != tt.want {
