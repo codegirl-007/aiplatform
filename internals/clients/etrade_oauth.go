@@ -150,7 +150,7 @@ func NewOAuthClient(config *oauth1.Config,
 	assert.Not_empty(access_token, "access_token must not be empty")
 	assert.Not_empty(access_secret, "access_secret must not be empty")
 
-	token := oauth1.NewToken(access_token, access_secret)
+	token := CreateOAuthToken(access_token, access_secret)
 	return config.Client(oauth1.NoContext, token)
 }
 
