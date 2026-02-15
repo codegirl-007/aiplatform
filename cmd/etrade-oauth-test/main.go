@@ -194,7 +194,36 @@ func run_oauth_flow(consumer_key, consumer_secret string,
 
 // calculate_token_expiry returns the token expiry time.
 // ETrade tokens expire at midnight US Eastern time.
-// For simplicity, we set expiry to 23 hours from now (conservative).
+// We compute next midnight US/Eastern minus a safety margin.
 func calculate_token_expiry() time.Time {
-	return time.Now().Add(23 * time.Hour)
+	// Load US/Eastern timezone.
+	location, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		// Fall back to conservative 1-hour TTL if timezone unavailable.
+		return time.Now().Add(1 * time.Hour)
+	}
+
+	now_eastern := time.Now().In(location)
+
+	// Calculate next calendar day's midnight in US/Eastern.
+	tomorrow := now_eastern.AddDate(0, 0, 1)
+	next_midnight_eastern := time.Date(
+		tomorrow.Year(),
+		tomorrow.Month(),
+		tomorrow.Day(),
+		0, 0, 0, 0,
+		location,
+	)
+
+	// Apply 5-minute safety margin to avoid using token after real expiry.
+	const safety_margin = 5 * time.Minute
+	expiry_eastern := next_midnight_eastern.Add(-safety_margin)
+
+	// Ensure computed expiry is in the future; otherwise fall back.
+	if !expiry_eastern.After(now_eastern) {
+		return time.Now().Add(1 * time.Hour)
+	}
+
+	// Return in UTC to avoid timezone surprises.
+	return expiry_eastern.UTC()
 }
