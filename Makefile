@@ -29,7 +29,7 @@ test:
 coverage:
 	go test ./... -coverpkg=./... -coverprofile=coverage.out -covermode=atomic
 	@printf "\n=== Coverage Summary ===\n"
-	@go tool cover -func=coverage.out | tee /dev/stderr | tail -1
+	@go tool cover -func=coverage.out | tail -1
 	@printf "\n=== Detailed Coverage ===\n"
 	@go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
