@@ -26,33 +26,53 @@ const (
 // oauth_endpoints returns the request token, access token, and authorize URLs
 // for the given sandbox flag.
 func oauth_endpoints(sandbox bool) (string, string, string) {
+	var request_url, access_url, authorize_url string
+
 	if sandbox {
-		return sandbox_request_token_url,
-			sandbox_access_token_url,
-			sandbox_authorize_url
+		request_url = sandbox_request_token_url
+		access_url = sandbox_access_token_url
+		authorize_url = sandbox_authorize_url
+	} else {
+		request_url = prod_request_token_url
+		access_url = prod_access_token_url
+		authorize_url = prod_authorize_url
 	}
 
-	return prod_request_token_url,
-		prod_access_token_url,
-		prod_authorize_url
+	assert.Not_empty(request_url, "request token URL must not be empty")
+	assert.Not_empty(access_url, "access token URL must not be empty")
+	assert.Not_empty(authorize_url, "authorize URL must not be empty")
+
+	return request_url, access_url, authorize_url
 }
 
 // APIBaseURL returns the API base URL for the given sandbox flag.
 func APIBaseURL(sandbox bool) string {
+	var base_url string
 	if sandbox {
-		return sandbox_api_base_url
+		base_url = sandbox_api_base_url
+	} else {
+		base_url = prod_api_base_url
 	}
-	return prod_api_base_url
+
+	assert.Not_empty(base_url, "API base URL must not be empty")
+
+	return base_url
 }
 
 const ()
 
 // renew_token_url returns the renew access token URL for the given sandbox flag.
 func renew_token_url(sandbox bool) string {
+	var renew_url string
 	if sandbox {
-		return sandbox_renew_token_url
+		renew_url = sandbox_renew_token_url
+	} else {
+		renew_url = prod_renew_token_url
 	}
-	return prod_renew_token_url
+
+	assert.Not_empty(renew_url, "renew token URL must not be empty")
+
+	return renew_url
 }
 
 // NewOAuthConfig creates an OAuth 1.0a config for ETrade.
