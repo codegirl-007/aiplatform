@@ -127,7 +127,8 @@ func AuthorizationURL(config *oauth1.Config, request_token string) string {
 }
 
 // ExchangeToken exchanges the request token and verifier for an access token.
-func ExchangeToken(config *oauth1.Config, request_token, request_secret, verifier string) (string, string, error) {
+func ExchangeToken(config *oauth1.Config,
+	request_token, request_secret, verifier string) (string, string, error) {
 	assert.Not_nil(config, "config must not be nil")
 	assert.Not_empty(request_token, "request_token must not be empty")
 	assert.Not_empty(request_secret, "request_secret must not be empty")
