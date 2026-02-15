@@ -4,22 +4,9 @@
 
 **Events are the source of truth. State is a cache.**
 
-## E*TRADE Sandbox Setup
+## E*TRADE Integration
 
-The OAuth test utility reads credentials from environment variables. Use a local `.env` file for sandbox credentials.
-
-Required variables:
-
-```
-ETRADE_CONSUMER_KEY=your_sandbox_key
-ETRADE_CONSUMER_SECRET=your_sandbox_secret
-```
-
-Run the test:
-
-```
-go run ./cmd/etrade-oauth-test
-```
+For E*TRADE API setup, OAuth configuration, and testing procedures, see `docs/etrade_manual_oauth_test.md`.
 
 ## Zero Technical Debt Policy
 
