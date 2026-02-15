@@ -11,3 +11,7 @@ etrade-test
 */etrade-test
 etrade-oauth-test
 */etrade-oauth-test
+
+# Test coverage
+coverage.out
+coverage.html
