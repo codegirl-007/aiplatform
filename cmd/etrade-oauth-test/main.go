@@ -31,7 +31,7 @@ func main() {
 		fmt.Println("Set these in your .env file or environment:")
 		fmt.Println("  ETRADE_CONSUMER_KEY=your_key")
 		fmt.Println("  ETRADE_CONSUMER_SECRET=your_secret")
-		fmt.Println("  ETRADE_SANDBOX=true   # optional, defaults to true")
+		fmt.Println("  ETRADE_SANDBOX=false  # optional, defaults to true (sandbox)")
 		os.Exit(1)
 	}
 

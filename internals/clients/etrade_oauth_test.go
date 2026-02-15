@@ -279,8 +279,8 @@ func TestParseSandboxEnv(t *testing.T) {
 		{"false", "false", false},
 		{"False", "False", false},
 		{"0", "0", false},
-		{"empty", "", false},
-		{"other", "yes", false},
+		{"empty", "", true},    // Default to sandbox when unset
+		{"other", "yes", true}, // Unknown values default to sandbox
 	}
 
 	for _, tt := range tests {

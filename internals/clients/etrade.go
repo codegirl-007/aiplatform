@@ -153,8 +153,21 @@ func (e *etrade) post(path string, content_type string,
 }
 
 // ParseSandboxEnv parses the ETRADE_SANDBOX environment variable.
-// Returns true if set to "true", false otherwise (defaults to false).
+// Returns true if set to "true" or "1", false if set to "false" or "0".
+// Defaults to sandbox=true when unset or empty (fail-safe for production).
 func ParseSandboxEnv() bool {
 	val := strings.ToLower(strings.TrimSpace(os.Getenv("ETRADE_SANDBOX")))
-	return val == "true" || val == "1"
+
+	// Default to sandbox when not explicitly configured.
+	if val == "" {
+		return true
+	}
+
+	// Explicit false values switch to production.
+	if val == "false" || val == "0" {
+		return false
+	}
+
+	// All other values (including "true", "1") use sandbox.
+	return true
 }
